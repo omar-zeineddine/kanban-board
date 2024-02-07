@@ -1,12 +1,25 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import PlusIcon from "@/icons/PlusIcon";
 import { Col, Id } from "@/types";
 import ColContainer from "./ColContainer";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+import { createPortal } from "react-dom";
+
+const document = globalThis.document;
 
 const KanbanBoard = () => {
   const [cols, setCols] = React.useState<Col[]>([]);
-  console.log(cols);
+  const colsId = useMemo(() => cols.map((col) => col.id), [cols]);
+  // console.log(cols);
+  //
+  const [activeCol, setActiveCol] = React.useState<Col | null>(null);
 
   // creates New columns of type Col
   const createNewCol = () => {
@@ -26,26 +39,66 @@ const KanbanBoard = () => {
     return Math.floor(Math.random() * 10001);
   }
 
+  const onDragStart = (event: DragStartEvent) => {
+    console.log("Drag started", event);
+    if (event.active.data.current?.type === "column") {
+      setActiveCol(event.active.data.current.column);
+      return;
+    }
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    setCols((columns) => {
+      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+
+      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+
+      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+    });
+  };
+
   return (
     <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px]">
-      <div className="m-auto flex gap-4">
-        <div className="flex gap-4">
-          {cols.map((col) => (
-            <div key={col.id}>
-              <ColContainer column={col} deleteColumn={deleteCol} />
-            </div>
-          ))}
-        </div>
-        <button
-          className="bg-mainBackgroundColor border-colBackgroundColor flex h-[60px] w-[350px] min-w-[350px] cursor-pointer items-center gap-2 rounded-lg border-2 ring-rose-500 hover:ring-2"
-          onClick={createNewCol}
-        >
-          <div className="mx-4 size-5">
-            <PlusIcon />
+      <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <div className="m-auto flex gap-4">
+          <div className="flex gap-4">
+            <SortableContext items={colsId}>
+              {cols.map((col) => (
+                <ColContainer
+                  key={col.id}
+                  column={col}
+                  deleteColumn={deleteCol}
+                />
+              ))}
+            </SortableContext>
           </div>
-          Add Column
-        </button>
-      </div>
+          <button
+            className="flex h-[60px] w-[350px] min-w-[350px] cursor-pointer items-center gap-2 rounded-lg border-2 border-colBackgroundColor bg-mainBackgroundColor ring-rose-500 hover:ring-2"
+            onClick={createNewCol}
+          >
+            <div className="mx-4 size-5">
+              <PlusIcon />
+            </div>
+            Add Column
+          </button>
+        </div>
+        {createPortal(
+          <DragOverlay>
+            {activeCol && (
+              <ColContainer column={activeCol} deleteColumn={deleteCol} />
+            )}
+          </DragOverlay>,
+          document.body,
+        )}
+      </DndContext>
     </div>
   );
 };
