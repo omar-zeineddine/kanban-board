@@ -19,3 +19,7 @@ body,
 ::-webkit-scrollbar-thumb {
   @apply rounded-xl bg-rose-900;
 }
+
+.task > ::-webkit-scrollbar-thumb {
+  @apply rounded-xl bg-sky-500;
+}

@@ -1,11 +1,10 @@
 import React from "react";
 import { Col, Id, Task } from "@/types";
 import TrashIcon from "@/icons/TrashIcon";
-import { useSortable } from "@dnd-kit/sortable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import PlusIcon from "@/icons/PlusIcon";
 import TaskCard from "./TaskCard";
-import { deleteAppClientCache } from "next/dist/server/lib/render-server";
 
 interface Props {
   column: Col;
@@ -13,13 +12,25 @@ interface Props {
   updateColumn: (id: Id, title: string) => void;
   createTask: (colId: Id) => void;
   deleteTask: (id: Id) => void;
+  updateTask: (id: Id, content: string) => void;
   tasks: Task[];
 }
 
 const ColContainer = (props: Props) => {
-  const { column, deleteColumn, updateColumn, createTask, tasks, deleteTask } =
-    props;
+  const {
+    column,
+    deleteColumn,
+    updateColumn,
+    createTask,
+    tasks,
+    deleteTask,
+    updateTask,
+  } = props;
+
   const [editMode, setEditMode] = React.useState(false);
+  const tasksIds = React.useMemo(() => {
+    return tasks.map((task) => task.id);
+  }, [tasks]);
 
   const {
     setNodeRef,
@@ -101,7 +112,14 @@ const ColContainer = (props: Props) => {
       {/* task container */}
       <div className="flex flex-grow flex-col gap-4 overflow-y-auto overflow-x-hidden p-2">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} deleteTask={deleteTask} />
+          <SortableContext items={tasksIds} key={task.id}>
+            <TaskCard
+              key={task.id}
+              task={task}
+              deleteTask={deleteTask}
+              updateTask={updateTask}
+            />
+          </SortableContext>
         ))}
       </div>
       {/* footer */}
