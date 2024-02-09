@@ -17,8 +17,6 @@ import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 
-const document = globalThis.document;
-
 const KanbanBoard = () => {
   const [cols, setCols] = React.useState<Col[]>([]);
   const colsId = useMemo(() => cols.map((col) => col.id), [cols]);
@@ -172,6 +170,42 @@ const KanbanBoard = () => {
     }
   };
 
+  // Import useEffect hook from React
+  // Inside your component
+  React.useEffect(() => {
+    // Check if document is available
+    if (typeof document !== "undefined") {
+      // Render the component
+      {
+        createPortal(
+          <DragOverlay>
+            {activeCol && (
+              <ColContainer
+                column={activeCol}
+                deleteColumn={deleteCol}
+                updateColumn={updateCol}
+                createTask={createTask}
+                tasks={tasks.filter((task) => task.columnId === activeCol.id)}
+                deleteTask={deleteTask}
+                updateTask={updateTask}
+              />
+            )}
+
+            {activeTask && (
+              <TaskCard
+                task={activeTask}
+                deleteTask={deleteTask}
+                updateTask={updateTask}
+              />
+            )}
+          </DragOverlay>,
+          document.body,
+        );
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px]">
       <DndContext
@@ -207,30 +241,6 @@ const KanbanBoard = () => {
             Add Column
           </button>
         </div>
-        {createPortal(
-          <DragOverlay>
-            {activeCol && (
-              <ColContainer
-                column={activeCol}
-                deleteColumn={deleteCol}
-                updateColumn={updateCol}
-                createTask={createTask}
-                tasks={tasks.filter((task) => task.columnId === activeCol.id)}
-                deleteTask={deleteTask}
-                updateTask={updateTask}
-              />
-            )}
-
-            {activeTask && (
-              <TaskCard
-                task={activeTask}
-                deleteTask={deleteTask}
-                updateTask={updateTask}
-              />
-            )}
-          </DragOverlay>,
-          document.body,
-        )}
       </DndContext>
     </div>
   );

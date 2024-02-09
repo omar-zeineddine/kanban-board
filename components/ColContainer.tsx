@@ -132,7 +132,7 @@ const ColContainer = (props: Props) => {
         <PlusIcon />
         Add Task
       </button>
-      <div>Footer</div>
+      {/* <div>Footer</div> */}
     </div>
   );
 };
