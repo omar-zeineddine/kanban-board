@@ -8,6 +8,9 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
@@ -18,8 +21,16 @@ const KanbanBoard = () => {
   const [cols, setCols] = React.useState<Col[]>([]);
   const colsId = useMemo(() => cols.map((col) => col.id), [cols]);
   // console.log(cols);
-  //
   const [activeCol, setActiveCol] = React.useState<Col | null>(null);
+
+  // fix delete button drag
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 20, // distance in px before dragging starts
+      },
+    }),
+  );
 
   // creates New columns of type Col
   const createNewCol = () => {
@@ -33,6 +44,16 @@ const KanbanBoard = () => {
   const deleteCol = (id: Id) => {
     const filteredCols = cols.filter((col) => col.id !== id);
     setCols(filteredCols);
+  };
+
+  const updateCol = (id: Id, title: string) => {
+    const newCols = cols.map((col) => {
+      if (col.id !== id) {
+        return col;
+      }
+      return { ...col, title };
+    });
+    setCols(newCols);
   };
 
   function generateId() {
@@ -67,7 +88,11 @@ const KanbanBoard = () => {
 
   return (
     <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px]">
-      <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <DndContext
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        sensors={sensors}
+      >
         <div className="m-auto flex gap-4">
           <div className="flex gap-4">
             <SortableContext items={colsId}>
@@ -76,6 +101,7 @@ const KanbanBoard = () => {
                   key={col.id}
                   column={col}
                   deleteColumn={deleteCol}
+                  updateColumn={updateCol}
                 />
               ))}
             </SortableContext>
@@ -93,7 +119,11 @@ const KanbanBoard = () => {
         {createPortal(
           <DragOverlay>
             {activeCol && (
-              <ColContainer column={activeCol} deleteColumn={deleteCol} />
+              <ColContainer
+                column={activeCol}
+                deleteColumn={deleteCol}
+                updateColumn={updateCol}
+              />
             )}
           </DragOverlay>,
           document.body,
